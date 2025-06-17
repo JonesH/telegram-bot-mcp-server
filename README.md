@@ -227,6 +227,84 @@ This MCP server now covers **23 tools** including:
 
 ---
 
+## 🧪 Testing Tools
+
+This project includes a comprehensive test script to verify all MCP tools are working correctly.
+
+### Running Tests
+
+```bash
+./test-tools.sh <BOT_TOKEN> [TEST_CHAT_ID] [TEST_USER_ID]
+```
+
+**Parameters:**
+- `BOT_TOKEN` (required): Your bot token from @BotFather
+- `TEST_CHAT_ID` (optional): Chat ID for testing messaging tools
+- `TEST_USER_ID` (optional): User ID for testing user-specific operations
+
+**Example:**
+```bash
+# Basic test (authentication and configuration only)
+./test-tools.sh 123456789:ABCdefGHIjklMNOpqrsTUVwxyz
+
+# Full test with chat interaction
+./test-tools.sh 123456789:ABCdefGHIjklMNOpqrsTUVwxyz @your_username 123456789
+```
+
+### Test Categories
+
+**🔐 Bot Authentication**
+- Verifies token validity with `get-me`
+
+**📋 Basic Information Tools**
+- Tests all `get-my-*` tools (name, description, commands)
+
+**⚙️ Configuration Tools** 
+- Tests all `set-my-*` tools with sample data
+- Verifies changes with corresponding get tools
+
+**🌐 Webhook Configuration**
+- Tests webhook setup with sample HTTPS URL
+
+**💬 Chat Interaction Tools** (requires `TEST_CHAT_ID`)
+- Message sending (`send-message`, `sendMessage`)
+- Photo sending with test image
+- Inline keyboard functionality
+- Chat information retrieval
+
+**👤 User Interaction Tools** (requires both `TEST_CHAT_ID` and `TEST_USER_ID`)
+- Chat member information
+- *Note: Ban/unban tests are skipped as they're destructive*
+
+**🎛️ Interactive Tools**
+- Documents tools requiring real user interaction:
+  - `answerCallbackQuery` (button presses)
+  - `answerWebAppQuery` (Mini App data)
+  - `editMessageText` (message updates)
+  - `editMessageReplyMarkup` (button layout changes)
+
+### Test Features
+
+- **🏗️ Automatic Build**: Builds project before testing
+- **🎨 Colored Output**: Green ✓, Red ✗, Yellow ⚠ indicators  
+- **🧹 Auto Cleanup**: Handles MCP server lifecycle
+- **📊 Summary Report**: Shows passed/failed/skipped counts
+- **⚡ Smart Testing**: Skips tests when required parameters aren't provided
+- **🔒 Safe Testing**: Avoids destructive operations
+
+### Getting Test Parameters
+
+**For `TEST_CHAT_ID`:**
+- Private chat: Your own user ID (shown in `get-me` response)
+- Group chat: Use group's chat ID
+- Channel: Use channel's chat ID or @username
+
+**For `TEST_USER_ID`:**
+- Use your own user ID from the `get-me` response
+- Or any other user ID you want to test with
+
+---
+
 ## 💬 Support & Feedback
 
 Feel free to open issues or contribute to the project. For Telegram-specific help, refer to the [Telegram Bot API documentation](https://core.telegram.org/bots/api).
