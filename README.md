@@ -1,6 +1,8 @@
 # 🧠 Telegram Bot MCP Server
 
-This project is a **Telegram bot integration** built using the [Model Context Protocol (MCP)](https://modelcontextprotocol.org/) that exposes a suite of useful tools for interacting with the Telegram Bot API. It enables standardized communication with Telegram via a structured set of commands such as messaging, user management, and bot profile configuration.
+This project is a **Telegram bot integration** built using the [Model Context Protocol (MCP)](https://modelcontextprotocol.org/) that exposes a comprehensive suite of tools for interacting with the Telegram Bot API. It enables standardized communication with Telegram via structured commands, **interactive UI components**, **dynamic conversation flows**, and **Mini App integration**.
+
+**Perfect for TelegramAgent integration** - provides reliable API interface preventing hallucinations and enabling advanced bot capabilities.
 
 ---
 
@@ -8,138 +10,146 @@ This project is a **Telegram bot integration** built using the [Model Context Pr
 
 This MCP server exposes the following tools:
 
-### ✅ `get-me`
+## 🎯 **TelegramAgent Core Tools**
 
-Test your bot's authentication and retrieve basic information about the bot.
+### ⚡ `sendMessage`
 
----
-
-### 💬 `send-message`
-
-Send a plain text message to a specific user or chat.
+Send messages with **inline keyboard support** for dynamic conversation flows.
 
 - **Input**:
   - `chatId`: Target chat ID or username
   - `text`: Message content
+  - `parse_mode` (optional): "Markdown", "MarkdownV2", or "HTML"
+  - `reply_markup` (optional): Inline keyboard configuration
+
+**Example Inline Keyboard:**
+```json
+{
+  "inline_keyboard": [
+    [
+      {"text": "🔗 Open App", "web_app": {"url": "https://your-mini-app.com"}},
+      {"text": "📞 Call", "callback_data": "call_action"}
+    ],
+    [{"text": "🌐 Visit Website", "url": "https://example.com"}]
+  ]
+}
+```
 
 ---
+
+### ✏️ `editMessageText`
+
+Edit message text for **real-time conversation updates**.
+
+- **Input**:
+  - `chatId`: Target chat ID
+  - `messageId`: Message ID to edit
+  - `text`: New message text
+  - `parse_mode` (optional): Text formatting
+  - `reply_markup` (optional): Updated inline keyboard
+
+---
+
+### 🔄 `editMessageReplyMarkup`
+
+Modify button layouts without changing message text.
+
+- **Input**:
+  - `chatId`: Target chat ID
+  - `messageId`: Message ID to edit
+  - `reply_markup` (optional): New keyboard layout
+
+---
+
+### 🎛️ `answerCallbackQuery`
+
+Handle button press responses from inline keyboards.
+
+- **Input**:
+  - `callback_query_id`: Query identifier from button press
+  - `text` (optional): Notification text (0-200 chars)
+  - `show_alert` (optional): Show alert vs notification
+  - `url` (optional): URL to open
+  - `cache_time` (optional): Caching duration
+
+---
+
+### 📱 `setChatMenuButton`
+
+Link generated **Mini Apps** to bot menu.
+
+- **Input**:
+  - `chat_id` (optional): Target private chat
+  - `menu_button`: Button configuration
+
+**Menu Button Types:**
+- `{"type": "default"}` - Default behavior
+- `{"type": "commands"}` - Show command list
+- `{"type": "web_app", "text": "Open App", "web_app": {"url": "https://your-app.com"}}` - Mini App integration
+
+---
+
+### 🌐 `answerWebAppQuery`
+
+Process data sent from **Mini Apps**.
+
+- **Input**:
+  - `web_app_query_id`: Query identifier
+  - `result`: Result object with type, id, title, description, message_text
+
+---
+
+### 🔗 `setWebHook`
+
+Configure webhook for receiving **real-time updates**.
+
+- **Input**:
+  - `url`: HTTPS webhook URL
+  - `max_connections` (optional): 1-100 connections
+  - `allowed_updates` (optional): Update types to receive
+  - `secret_token` (optional): Security token
+  - `drop_pending_updates` (optional): Clear pending updates
+
+---
+
+## 📦 **Legacy Tools (Maintained for Compatibility)**
+
+### ✅ `get-me`
+Test bot authentication and retrieve basic information.
+
+### 💬 `send-message`
+Send plain text message (legacy - use `sendMessage` for inline keyboards).
 
 ### 🖼️ `send-photo`
+Send photo with optional caption.
 
-Send a photo with an optional caption.
+### 🔨 `kick-chat-member` / ♻️ `un-ban-chat-member`
+Ban/unban users from chats.
 
-- **Input**:
-  - `chatId`: Target chat ID or username
-  - `media`: File ID, URL, or uploaded file
-  - `text` (optional): Caption for the photo
+### 🧾 `get-chat` / 👥 `get-chat-member-count` / 🔍 `get-chat-member`
+Chat information and member management.
 
----
+### 📝 `set-my-commands` / 📋 `get-my-commands`
+Bot command menu configuration.
 
-### 🔨 `kick-chat-member`
+### 🧑‍💻 `set-my-name` / 🙋 `get-my-name`
+Bot name management.
 
-Ban a user from a group, supergroup, or channel.
+### 📘 `set-my-description` / 📖 `get-my-description`
+Bot description management.
 
-- **Input**:
-  - `chatId`: Target chat
-  - `userId`: User to ban
-
----
-
-### ♻️ `un-ban-chat-member`
-
-Unban a previously banned user from a chat.
-
-- **Input**:
-  - `chatId`: Target chat
-  - `userId`: User to unban
+### ✏️ `set-my-short-description` / 📄 `get-my-short-description`
+Bot short description management.
 
 ---
 
-### 🧾 `get-chat`
+## 🛡️ **Enhanced Features**
 
-Fetch full chat metadata and details.
-
-- **Input**:
-  - `chatId`: Target chat
-
----
-
-### 👥 `get-chat-member-count`
-
-Get the total number of members in a group or channel.
-
-- **Input**:
-  - `chatId`: Target chat
-
----
-
-### 🔍 `get-chat-member`
-
-Get detailed info about a specific member in a group or channel.
-
-- **Input**:
-  - `chatId`: Target chat
-  - `userId`: Target user
-
----
-
-### ✏️ `set-my-short-description`
-
-Update your bot's short description (shown in the profile and shares).
-
-- **Input**:
-  - `short_description`: New short description (max 120 chars)
-
----
-
-### 📄 `get-my-short-description`
-
-Fetch the current short description of the bot.
-
----
-
-### 📝 `set-my-commands`
-
-Set the list of commands that appear in the Telegram UI.
-
-- **Input**:
-  - `commands`: Array of `{ command, description }`
-
----
-
-### 📋 `get-my-commands`
-
-Get the current list of commands configured for the bot.
-
----
-
-### 🧑‍💻 `set-my-name`
-
-Update the name of the bot.
-
-- **Input**:
-  - `name`: New bot name
-
----
-
-### 🙋 `get-my-name`
-
-Retrieve the current name of the bot.
-
----
-
-### 📘 `set-my-description`
-
-Update the full description of the bot (shown in empty chats).
-
-- **Input**:
-  - `description`: New bot description (max 512 chars)
-
----
-
-### 📖 `get-my-description`
-
-Fetch the current description of the bot.
+- **🔍 Detailed Error Handling**: Comprehensive Telegram API error messages with error codes
+- **✅ Input Validation**: Zod schemas for all parameters with HTTPS URL validation
+- **🎯 Type Safety**: Full TypeScript compatibility with Telegraf
+- **🔄 Backward Compatibility**: All existing tools remain functional
+- **📋 Clean Architecture**: DRY principles with reusable error formatting
 
 ---
 
@@ -204,9 +214,24 @@ Add this to your MCP client configuration:
 
 ---
 
+## 🔗 **API Coverage**
+
+This MCP server now covers **23 tools** including:
+- ✅ Interactive UI components (inline keyboards, callback queries)
+- ✅ Dynamic conversation flows (message editing)
+- ✅ Mini App integration (web app buttons, queries)
+- ✅ Real-time updates (webhooks)
+- ✅ Basic messaging and media
+- ✅ Chat and user management
+- ✅ Bot configuration and info
+
+---
+
 ## 💬 Support & Feedback
 
 Feel free to open issues or contribute to the project. For Telegram-specific help, refer to the [Telegram Bot API documentation](https://core.telegram.org/bots/api).
+
+**TelegramAgent Integration**: This MCP server provides the essential tools for building sophisticated Telegram bots with interactive UIs and Mini App support.
 
 Buy me a Coffee :) https://buymeacoffee.com/delkhoshsiv
 
