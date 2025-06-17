@@ -2,8 +2,13 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Telegraf } from "telegraf";
 import { z } from "zod";
-import { TelegramCommandSchema } from "./types";
-import { BotCommand } from "telegraf/types";
+import { 
+  TelegramCommandSchema, 
+  InlineKeyboardMarkupSchema, 
+  MenuButtonSchema, 
+  WebHookInfoSchema 
+} from "./types";
+import { BotCommand, InlineKeyboardMarkup, MenuButton, Update } from "telegraf/types";
 
 const TELEGRAM_BOT_API_TOKEN = process.env.TELEGRAM_BOT_API_TOKEN;
 
@@ -22,6 +27,16 @@ const server = new McpServer({
 });
 
 const bot = new Telegraf(TELEGRAM_BOT_API_TOKEN);
+
+function formatTelegramError(error: any): string {
+  if (error?.response?.error_code && error?.response?.description) {
+    return `Telegram API Error ${error.response.error_code}: ${error.response.description}`;
+  }
+  if (error?.message) {
+    return `Error: ${error.message}`;
+  }
+  return `Unknown error occurred: ${String(error)}`;
+}
 
 server.tool(
   "get-me",
@@ -576,6 +591,291 @@ server.tool(
           {
             type: "text",
             text: `Something went wrong`,
+          },
+        ],
+      };
+    }
+  }
+);
+
+// Enhanced sendMessage with inline keyboard support
+server.tool(
+  "sendMessage",
+  "Send message with optional inline keyboard for dynamic conversation flows",
+  {
+    chatId: z
+      .string()
+      .describe("Unique identifier for the target chat or username of the target channel"),
+    text: z.string().describe("Text of the message to be sent"),
+    parse_mode: z.enum(["Markdown", "MarkdownV2", "HTML"]).optional(),
+    reply_markup: InlineKeyboardMarkupSchema.optional(),
+  },
+  async ({ chatId, text, parse_mode, reply_markup }) => {
+    try {
+      const result = await bot.telegram.sendMessage(chatId, text, {
+        parse_mode,
+        reply_markup: reply_markup as InlineKeyboardMarkup | undefined,
+      });
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result),
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: formatTelegramError(error),
+          },
+        ],
+      };
+    }
+  }
+);
+
+// Edit message text for conversation flow updates
+server.tool(
+  "editMessageText",
+  "Edit text of a message, used for updating conversation flows dynamically",
+  {
+    chatId: z
+      .string()
+      .describe("Unique identifier for the target chat or username of the target channel"),
+    messageId: z.number().describe("Identifier of the message to edit"),
+    text: z.string().describe("New text of the message"),
+    parse_mode: z.enum(["Markdown", "MarkdownV2", "HTML"]).optional(),
+    reply_markup: InlineKeyboardMarkupSchema.optional(),
+  },
+  async ({ chatId, messageId, text, parse_mode, reply_markup }) => {
+    try {
+      const result = await bot.telegram.editMessageText(
+        chatId,
+        messageId,
+        undefined,
+        text,
+        {
+          parse_mode,
+          reply_markup: reply_markup as InlineKeyboardMarkup | undefined,
+        }
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result),
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: formatTelegramError(error),
+          },
+        ],
+      };
+    }
+  }
+);
+
+// Edit message reply markup for button layout updates
+server.tool(
+  "editMessageReplyMarkup",
+  "Edit only the reply markup of a message, used for modifying button layouts",
+  {
+    chatId: z
+      .string()
+      .describe("Unique identifier for the target chat or username of the target channel"),
+    messageId: z.number().describe("Identifier of the message to edit"),
+    reply_markup: InlineKeyboardMarkupSchema.optional(),
+  },
+  async ({ chatId, messageId, reply_markup }) => {
+    try {
+      const result = await bot.telegram.editMessageReplyMarkup(
+        chatId,
+        messageId,
+        undefined,
+        reply_markup as InlineKeyboardMarkup | undefined
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result),
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: formatTelegramError(error),
+          },
+        ],
+      };
+    }
+  }
+);
+
+// Answer callback queries from button presses
+server.tool(
+  "answerCallbackQuery",
+  "Answer callback queries sent from inline keyboards, handles button press responses",
+  {
+    callback_query_id: z.string().describe("Unique identifier for the query to be answered"),
+    text: z.string().max(200).optional().describe("Text of the notification (0-200 characters)"),
+    show_alert: z.boolean().optional().describe("Show alert instead of notification"),
+    url: z.string().url().optional().describe("URL to open"),
+    cache_time: z.number().min(0).optional().describe("Maximum time in seconds for caching"),
+  },
+  async ({ callback_query_id, text, show_alert, url, cache_time }) => {
+    try {
+      const result = await bot.telegram.answerCbQuery(callback_query_id, text, {
+        show_alert,
+        url,
+        cache_time,
+      });
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result),
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: formatTelegramError(error),
+          },
+        ],
+      };
+    }
+  }
+);
+
+// Set chat menu button for Mini App integration
+server.tool(
+  "setChatMenuButton",
+  "Set the bot's menu button for a specific chat, used to link generated Mini Apps",
+  {
+    chat_id: z.string().optional().describe("Unique identifier for the target private chat"),
+    menu_button: MenuButtonSchema.describe("Menu button configuration"),
+  },
+  async ({ chat_id, menu_button }) => {
+    try {
+      const result = await bot.telegram.setChatMenuButton({
+        chatId: chat_id ? parseInt(chat_id) : undefined,
+        menuButton: menu_button as MenuButton
+      });
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result),
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: formatTelegramError(error),
+          },
+        ],
+      };
+    }
+  }
+);
+
+// Answer web app queries from Mini Apps
+server.tool(
+  "answerWebAppQuery",
+  "Answer queries from Mini Apps, processes data sent from web applications",
+  {
+    web_app_query_id: z.string().describe("Unique identifier for the answered query"),
+    result: z.object({
+      type: z.string(),
+      id: z.string(),
+      title: z.string().optional(),
+      description: z.string().optional(),
+      message_text: z.string().optional(),
+      parse_mode: z.enum(["Markdown", "MarkdownV2", "HTML"]).optional(),
+    }).describe("Result object for the web app query"),
+  },
+  async ({ web_app_query_id, result }) => {
+    try {
+      const response = await bot.telegram.answerWebAppQuery(web_app_query_id, result as any);
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(response),
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: formatTelegramError(error),
+          },
+        ],
+      };
+    }
+  }
+);
+
+// Set webhook for receiving updates
+server.tool(
+  "setWebHook",
+  "Configure webhook URL for receiving updates from Telegram",
+  {
+    url: z.string().url("Must be a valid HTTPS URL").describe("HTTPS URL to send updates to"),
+    max_connections: z.number().min(1).max(100).optional().describe("Maximum allowed connections"),
+    allowed_updates: z.array(z.enum(["message", "callback_query", "inline_query", "chosen_inline_result", "channel_post", "edited_message", "edited_channel_post", "shipping_query", "pre_checkout_query", "poll", "poll_answer", "my_chat_member", "chat_member", "chat_join_request", "message_reaction", "message_reaction_count", "chat_boost", "removed_chat_boost"])).optional().describe("List of update types to receive"),
+    secret_token: z.string().max(256).optional().describe("Secret token for webhook security"),
+    drop_pending_updates: z.boolean().optional().describe("Drop all pending updates"),
+  },
+  async ({ url, max_connections, allowed_updates, secret_token, drop_pending_updates }) => {
+    try {
+      const result = await bot.telegram.setWebhook(url, {
+        max_connections,
+        allowed_updates,
+        secret_token,
+        drop_pending_updates,
+      });
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result),
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: formatTelegramError(error),
           },
         ],
       };
